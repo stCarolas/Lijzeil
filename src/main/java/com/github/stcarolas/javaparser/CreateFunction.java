@@ -14,6 +14,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+
 import com.github.javaparser.Position;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
@@ -39,6 +42,7 @@ import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.printer.YamlPrinter;
 
+import io.vavr.Function2;
 import io.vavr.collection.List;
 import io.vavr.collection.Map;
 import io.vavr.control.Option;
@@ -48,46 +52,26 @@ import lombok.extern.log4j.Log4j2;
 import static io.vavr.API.*;
 
 @Log4j2
+@Named("CreateFunction")
 public class CreateFunction {
 
-  public void execute(String path, Range range){
-    log.info("analyze {}",path);
-    log.info(
-      "in range {}:{} - {}:{}",
-      range.getBegin().getLine(),
-      range.getBegin().getColumn(),
-      range.getEnd().getLine(),
-      range.getEnd().getColumn()
-    );
-    Try<CompilationUnit> unit = 
-      Try(() -> new FileInputStream(new File(URI.create(path))))
-        .map(content -> StaticJavaParser.parse(content));
-    log.debug("primay type: {}", unit.get().getType(0));
+  @Inject @Named("WriteSource")
+  Function2<String, CompilationUnit, Try<String>> writeSource;
 
+  @Inject @Named("ParseCompilationUnit")
+  Function<String, Try<CompilationUnit>> parseCompilationUnit;
+
+  @Inject @Named("ParsePackage")
+  Function<CompilationUnit, Try<PackageDeclaration>> parsePackage;
+
+  public Try<String> execute(String path, Range range){
+    Try<CompilationUnit> unit = parseCompilationUnit.apply(path);
+    Try<PackageDeclaration> unitPackage = unit.flatMap(parsePackage);
     Try<ExpressionStmt> nodes = unit.flatMap($ -> selectedNodes($, range));
 
-    Try<PackageDeclaration> unitPackage = 
-      unit.flatMap(
-        $ -> Option.ofOptional($.getPackageDeclaration()).toTry()
-      );
-
-    CompilationUnit source = 
-      For(unitPackage, nodes).yield(this::createFunction).get();
-    log.info("created: {}", source);
-
-    Path filePath = Paths.get(URI.create(path));
-    String name = source.getType(0).getName().toString();
-    log.info("writing file for {}", name);
-    Path newFile = filePath.getParent().resolve(name + ".java");
-    FileWriter writer;
-    try {
-      writer = new FileWriter(newFile.toFile());
-      writer.write(source.toString());
-      writer.flush();
-      log.info("writed");
-    } catch (Exception e) {
-      log.error("Error",e);
-    }
+    return For(unitPackage, nodes)
+      .yield(this::createFunction)
+      .flatMap($ -> writeSource.apply(path, $));
   }
 
   public CompilationUnit createFunction(PackageDeclaration classPackage, ExpressionStmt code){
@@ -101,7 +85,7 @@ public class CreateFunction {
         .addImplementedType(functionType(code));
     addApplyMethod(classCode, code);
       
-    log.info("code: \n---\n" + source + "\n---");
+    log.debug("created: {}", source);
     return source;
   }
 
@@ -209,9 +193,9 @@ public class CreateFunction {
     String name = variable.getName().toString();
     Optional<Node> parent = variable.getParentNode();
     while( 
-        !declared
-        && parent.isPresent() 
-        && parent.filter($ -> $.equals(root)).isEmpty() 
+      !declared
+      && parent.isPresent() 
+      && parent.filter($ -> $.equals(root)).isEmpty() 
     ){
       Node node = parent.get();
       if (node.getClass().equals(LambdaExpr.class)){

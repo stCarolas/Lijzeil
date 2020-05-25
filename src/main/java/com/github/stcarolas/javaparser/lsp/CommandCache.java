@@ -22,7 +22,7 @@ public class CommandCache {
   }
 
   public Try<String> executeCommand(String key){
-    log.info("execute " + key);
+    log.info("execute {}",key);
     commands.get(key).forEach(Command::execute);
     commands = commands.remove(key);
     return Success("Success");

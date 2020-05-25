@@ -16,10 +16,14 @@ import org.eclipse.lsp4j.DidChangeTextDocumentParams;
 import org.eclipse.lsp4j.DidCloseTextDocumentParams;
 import org.eclipse.lsp4j.DidOpenTextDocumentParams;
 import org.eclipse.lsp4j.DidSaveTextDocumentParams;
+import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 import org.eclipse.lsp4j.services.TextDocumentService;
 
+import lombok.extern.log4j.Log4j2;
+
 @Named
+@Log4j2
 public class DocumentService implements TextDocumentService{
 
   @Inject
@@ -45,9 +49,17 @@ public class DocumentService implements TextDocumentService{
     CodeActionParams params
   ){
     String key = UUID.randomUUID().toString();
-    com.github.stcarolas.javaparser.lsp.Command command = 
-      new ExtractAsFunction(params.getTextDocument().getUri(),params.getRange());
+    String path = params.getTextDocument().getUri();
+    Range range = params.getRange();
+    com.github.stcarolas.javaparser.lsp.Command command = new ExtractAsFunction(path, range);
     cache.addCommand(key, command);
+    log.info("analyze {} in range {}:{} - {}:{} as command {}", path,
+      range.getStart().getLine(),
+      range.getStart().getCharacter(),
+      range.getEnd().getLine(),
+      range.getEnd().getCharacter(),
+      key
+    );
     return CompletableFuture
       .supplyAsync(
         () -> List.of(

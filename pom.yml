@@ -1,6 +1,6 @@
-name: Enriched Beans Annotations
-artifactId: parser
-groupId: com.github.stcarolas.enriched-beans
+name: Lijzeil Language Server
+artifactId: lijzeil
+groupId: com.github.stcarolas.lijzeil
 version: ${revision} 
 
 modelVersion: 4.0.0
@@ -10,7 +10,7 @@ properties:
   revision: 0.2.0
 
 dependencies:
-- {groupId: io.vavr,                             artifactId: vavr,                          version: 0.10.2}
+- {groupId: io.vavr,                             artifactId: vavr,                          version: 1.0.0-alpha-3}
 - {groupId: org.apache.logging.log4j,            artifactId: log4j-api,                     version: 2.12.1}
 - {groupId: org.apache.logging.log4j,            artifactId: log4j-core,                    version: 2.12.1}
 - {groupId: org.apache.logging.log4j,            artifactId: log4j-slf4j-impl,              version: 2.9.0}
