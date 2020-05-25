@@ -1,0 +1,10 @@
+pom.xml
+target
+.classpath
+.factorypath
+.flattened-pom.xml
+.metadata/
+.project
+.settings/
+.sts4-cache/
+dependency-reduced-pom.xml
