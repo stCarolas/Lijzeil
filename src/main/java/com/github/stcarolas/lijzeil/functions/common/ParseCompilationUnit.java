@@ -1,4 +1,4 @@
-package  com.github.stcarolas.javaparser.functions.common;
+package  com.github.stcarolas.lijzeil.functions.common;
 
 import static io.vavr.API.Try;
 
@@ -15,11 +15,11 @@ import com.github.javaparser.ast.CompilationUnit;
 import io.vavr.control.Try;
 
 @Named("ParseCompilationUnit")
-public class ParseCompilationUnit implements Function<String, Try<CompilationUnit>> {
+public class ParseCompilationUnit implements Function<URI, Try<CompilationUnit>> {
 
 	@Override
-	public Try<CompilationUnit> apply(String uri) {
-    return Try(() -> new FileInputStream(new File(URI.create(uri))))
+	public Try<CompilationUnit> apply(URI uri) {
+    return Try(() -> new FileInputStream(new File(uri)))
         .map(content -> StaticJavaParser.parse(content));
 	}
 

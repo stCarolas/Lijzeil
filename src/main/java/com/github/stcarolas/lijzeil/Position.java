@@ -1,4 +1,4 @@
-package  com.github.stcarolas.javaparser;
+package  com.github.stcarolas.lijzeil;
 
 import lombok.Data;
 import lombok.RequiredArgsConstructor;

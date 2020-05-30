@@ -1,4 +1,4 @@
-package  com.github.stcarolas.javaparser.functions.common;
+package  com.github.stcarolas.lijzeil.functions.common;
 
 import java.io.File;
 import java.io.FileWriter;

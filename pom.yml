@@ -22,6 +22,7 @@ dependencies:
 - {groupId: javax.inject,                        artifactId: javax.inject,                  version: 1}
 - {groupId: io.micronaut,                        artifactId: micronaut-inject,              version: 1.3.4}
 - {groupId: com.github.stcarolas.enriched-beans, artifactId: enriched-beans-annotations,    version: 0.2.2}
+- {groupId: commons-io, artifactId: commons-io,    version: 2.6}
 
 
 build:
@@ -68,7 +69,7 @@ build:
     - configuration:
         transformers:
           org.apache.maven.plugins.shade.resource.ManifestResourceTransformer: {
-            mainClass: com.github.stcarolas.javaparser.lsp.Launcher,
+            mainClass: com.github.stcarolas.lijzeil.lsp.LijzeilLauncher,
             manifestEntries: {
               Multi-Release: true
             }

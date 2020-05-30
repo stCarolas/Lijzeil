@@ -1,4 +1,4 @@
-package  com.github.stcarolas.javaparser.functions.common;
+package  com.github.stcarolas.lijzeil.functions.common;
 
 import static io.vavr.API.For;
 import static io.vavr.API.Option;
@@ -20,7 +20,7 @@ import io.vavr.control.Try;
 @Named("WriteSource")
 public class WriteSource implements Function2<String, CompilationUnit, Try<String>> {
 
-  @Inject @Named("WriteSource")
+  @Inject @Named("WriteSourceToFile")
   Function2<File, CompilationUnit, Try<String>> writeSource;
 
   public Try<String> apply(String uri, CompilationUnit aSource){

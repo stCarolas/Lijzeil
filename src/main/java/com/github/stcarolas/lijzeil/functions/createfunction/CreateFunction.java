@@ -1,4 +1,4 @@
-package  com.github.stcarolas.javaparser;
+package  com.github.stcarolas.lijzeil.functions.createfunction;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -41,8 +41,11 @@ import com.github.javaparser.ast.stmt.ReturnStmt;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.printer.YamlPrinter;
+import com.github.stcarolas.lijzeil.Range;
+import com.github.stcarolas.lijzeil.WorkspaceChanges;
 
 import io.vavr.Function2;
+import io.vavr.Function3;
 import io.vavr.collection.List;
 import io.vavr.collection.Map;
 import io.vavr.control.Option;
@@ -53,43 +56,41 @@ import static io.vavr.API.*;
 
 @Log4j2
 @Named("CreateFunction")
-public class CreateFunction {
+public class CreateFunction implements Function2<URI, Range, Try<WorkspaceChanges>> {
 
-  @Inject @Named("WriteSource")
-  Function2<String, CompilationUnit, Try<String>> writeSource;
-
-  @Inject @Named("ParseCompilationUnit")
-  Function<String, Try<CompilationUnit>> parseCompilationUnit;
-
-  @Inject @Named("ParsePackage")
-  Function<CompilationUnit, Try<PackageDeclaration>> parsePackage;
-
-  public Try<String> execute(String path, Range range){
+  public Try<WorkspaceChanges> apply(URI path, Range range){
     Try<CompilationUnit> unit = parseCompilationUnit.apply(path);
     Try<PackageDeclaration> unitPackage = unit.flatMap(parsePackage);
-    Try<ExpressionStmt> nodes = unit.flatMap($ -> selectedNodes($, range));
+    Try<List<Node>> nodes = 
+      unit.map(findSelectedNode.apply(range, this::applicableStatement));
 
     return For(unitPackage, nodes)
       .yield(this::createFunction)
-      .flatMap($ -> writeSource.apply(path, $));
+      .flatMap($ -> writeSource.apply(path.toString(), $))
+      .map(source -> new WorkspaceChanges());
   }
 
-  public CompilationUnit createFunction(PackageDeclaration classPackage, ExpressionStmt code){
+  public CompilationUnit createFunction(
+    PackageDeclaration classPackage,
+    List<Node> nodes
+  ){
     CompilationUnit source = new CompilationUnit();
+    ExpressionStmt code = (ExpressionStmt) nodes.head();
 
     ClassOrInterfaceDeclaration classCode = source
       .setPackageDeclaration(classPackage)
       .addClass(functionName(code))
-        .setPublic(true)
-        .addAnnotation(named(code))
-        .addImplementedType(functionType(code));
+      .setPublic(true)
+      .addAnnotation(named(code))
+      .addImplementedType(functionType(code));
+
     addApplyMethod(classCode, code);
-      
+
     log.debug("created: {}", source);
     return source;
   }
 
-  public void addApplyMethod(
+  public MethodDeclaration addApplyMethod(
     ClassOrInterfaceDeclaration classCode,
     ExpressionStmt originalCode
   ){
@@ -110,6 +111,7 @@ public class CreateFunction {
     method.setType(returnType(originalCode));
     method.setPublic(true);
     method.createBody().addStatement(returnStmt);
+    return method;
   }
 
   public AnnotationExpr named(ExpressionStmt code){
@@ -209,14 +211,6 @@ public class CreateFunction {
     return !declared;
   }
 
-  public Try<ExpressionStmt> selectedNodes(Node unit, Range range) {
-    return Try(() -> List.of(unit))
-      .map( nodeList -> filterNodesWrappingRange(nodeList, range))
-      .filter( nodes -> nodes.size() == 1 )
-      .filter( nodes -> nodes.head().getClass().equals(ExpressionStmt.class) )
-      .map( nodes -> (ExpressionStmt) nodes.head() );
-  }
-
   public String functionName(ExpressionStmt block){
     List<VariableDeclarator> variables = List.ofAll(block.getExpression()
       .asVariableDeclarationExpr()
@@ -224,22 +218,6 @@ public class CreateFunction {
     String name = variables.head().getName().asString();
     name = name.substring(0,1).toUpperCase() + name.substring(1);
     return name;
-  }
-
-  public List<Node> filterNodesWrappingRange(List<Node> nodes, Range range) {
-    List<Node> selectedNodes = nodes;
-    List<Node> childNodes = nodes;
-    while(!childNodes.isEmpty()){
-      selectedNodes = childNodes;
-      childNodes = filterChildNodesWrappingRange(selectedNodes, range);
-    }
-    log.debug("selectedNodes: {}", selectedNodes);
-    Node expression = selectedNodes.head();
-    while(!applicableStatement(expression)){
-      expression = expression.getParentNode().get();
-    }
-    log.debug("expression: {}", expression);
-    return List(expression);
   }
 
   public boolean applicableStatement(Node node){
@@ -250,8 +228,20 @@ public class CreateFunction {
     }
   }
 
-  public List<Node> filterChildNodesWrappingRange(List<Node> nodes, Range range) {
-    return nodes.flatMap( unit -> List.ofAll(unit.getChildNodes()) )
-      .filter(range::wrappedBy);
-  }
+  @Inject @Named("WriteSource")
+  private Function2<String, CompilationUnit, Try<String>>
+    writeSource;
+
+  @Inject @Named("ParseCompilationUnit")
+  private Function<URI, Try<CompilationUnit>>
+    parseCompilationUnit;
+
+  @Inject @Named("ParsePackage")
+  private Function<CompilationUnit, Try<PackageDeclaration>>
+    parsePackage;
+
+  @Inject @Named("FindWrappingSelectionNode")
+  private Function3<Range, Function<Node,Boolean>, Node, List<Node>>
+    findSelectedNode;
+
 }

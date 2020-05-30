@@ -1,4 +1,4 @@
-package  com.github.stcarolas.javaparser.lsp;
+package  com.github.stcarolas.lijzeil.lsp;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -17,6 +17,7 @@ public class Server implements LanguageServer {
 
   @Inject
   private TextDocumentService document;
+
   @Inject
   private WorkspaceService workspace;
 
