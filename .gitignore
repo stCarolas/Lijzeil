@@ -8,3 +8,4 @@ target
 .settings/
 .sts4-cache/
 dependency-reduced-pom.xml
+tags

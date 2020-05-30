@@ -40,43 +40,43 @@ import static io.vavr.API.*;
 public class CreateApplyMethod implements Function2<URI, Range, WorkspaceChanges> {
 
 	public WorkspaceChanges apply(URI path, Range range) {
-    return parseCompilationUnit.apply(path).toList()
-      .flatMap(unit -> findFieldDeclarations.apply(unit,range))
-      .flatMap(FieldDeclaration::getVariables)
-      .flatMap(this::createApplyMethod)
-      .foldLeft(
-        new WorkspaceChanges(),
-        (changes, change) -> changes.withChange(path.toString(), change)
-      );
+		return parseCompilationUnit.apply(path).toList()
+			.flatMap(unit -> findFieldDeclarations.apply(unit,range))
+			.flatMap(FieldDeclaration::getVariables)
+			.flatMap(this::createApplyMethod)
+			.foldLeft(
+				new WorkspaceChanges(),
+				(changes, change) -> changes.withChange(path.toString(), change)
+			);
 	}
 
-  private Option<TextEdit> createApplyMethod(VariableDeclarator functionField){
-    return findParentNode.apply(classSelector, functionField)
-      .map(
-        classDeclaration -> (ClassOrInterfaceDeclaration)classDeclaration
-      )
-      .map(
-        classDeclaration -> createMethodBody.apply(functionField,classDeclaration)
-      );
-  }
+	private Option<TextEdit> createApplyMethod(VariableDeclarator functionField){
+		return findParentNode.apply(classSelector, functionField)
+			.map(
+				classDeclaration -> (ClassOrInterfaceDeclaration)classDeclaration
+			)
+			.map(
+				classDeclaration -> createMethodBody.apply(functionField,classDeclaration)
+			);
+	}
 
-  private Function<Node, Boolean> classSelector = 
-    node -> node.getClass().equals(ClassOrInterfaceDeclaration.class);
+	private Function<Node, Boolean> classSelector = 
+		node -> node.getClass().equals(ClassOrInterfaceDeclaration.class);
 
-  @Inject @Named("ParseCompilationUnit")
-  private Function<URI, Try<CompilationUnit>>
-    parseCompilationUnit;
+	@Inject @Named("ParseCompilationUnit")
+	private Function<URI, Try<CompilationUnit>>
+		parseCompilationUnit;
 
-  @Inject @Named("FindParentNode")
-  private Function2<Function<Node,Boolean>, Node, Option<Node>> 
-    findParentNode;
+	@Inject @Named("FindParentNode")
+	private Function2<Function<Node,Boolean>, Node, Option<Node>> 
+		findParentNode;
 
-  @Inject @Named("CreateApplyMethodBody")
-  private Function2<VariableDeclarator, ClassOrInterfaceDeclaration, TextEdit>
-    createMethodBody;
+	@Inject @Named("CreateApplyMethodBody")
+	private Function2<VariableDeclarator, ClassOrInterfaceDeclaration, TextEdit>
+		createMethodBody;
 
-  @Inject @Named("FindFieldDeclarations")
-  private Function2<CompilationUnit, Range, List<FieldDeclaration>>
-    findFieldDeclarations;
+	@Inject @Named("FindFieldDeclarations")
+	private Function2<CompilationUnit, Range, List<FieldDeclaration>>
+		findFieldDeclarations;
 
 }

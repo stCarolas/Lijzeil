@@ -16,20 +16,20 @@ import static io.vavr.API.*;
 @Named("CreateTextEdit")
 public class CreateTextEdit implements Function2<Range, String, Option<TextEdit>>{
 
-  public Option<TextEdit> apply(Range changeRange, String change){
-    Option<Range> optRange = Option(changeRange);
+	public Option<TextEdit> apply(Range changeRange, String change){
+		Option<Range> optRange = Option(changeRange);
 
-    Option<Position> begin = optRange
-      .flatMap($ -> Option($.getBegin()))
-      .map($ -> new Position($.getLine(),$.getColumn()));
+		Option<Position> begin = optRange
+			.flatMap($ -> Option($.getBegin()))
+			.map($ -> new Position($.getLine(),$.getColumn()));
 
-    Option<Position> end = optRange
-      .flatMap($ -> Option($.getEnd()))
-      .map($ -> new Position($.getLine(),$.getColumn()));
+		Option<Position> end = optRange
+			.flatMap($ -> Option($.getEnd()))
+			.map($ -> new Position($.getLine(),$.getColumn()));
 
-    return For(begin, end)
-      .yield(org.eclipse.lsp4j.Range::new)
-      .map($ -> new TextEdit($, change));
-  }
+		return For(begin, end)
+			.yield(org.eclipse.lsp4j.Range::new)
+			.map($ -> new TextEdit($, change));
+	}
 
 }

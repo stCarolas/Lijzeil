@@ -58,190 +58,190 @@ import static io.vavr.API.*;
 @Named("CreateFunction")
 public class CreateFunction implements Function2<URI, Range, Try<WorkspaceChanges>> {
 
-  public Try<WorkspaceChanges> apply(URI path, Range range){
-    Try<CompilationUnit> unit = parseCompilationUnit.apply(path);
-    Try<PackageDeclaration> unitPackage = unit.flatMap(parsePackage);
-    Try<List<Node>> nodes = 
-      unit.map(findSelectedNode.apply(range, this::applicableStatement));
+	public Try<WorkspaceChanges> apply(URI path, Range range){
+		Try<CompilationUnit> unit = parseCompilationUnit.apply(path);
+		Try<PackageDeclaration> unitPackage = unit.flatMap(parsePackage);
+		Try<List<Node>> nodes = 
+			unit.map(findSelectedNode.apply(range, this::applicableStatement));
 
-    return For(unitPackage, nodes)
-      .yield(this::createFunction)
-      .flatMap($ -> writeSource.apply(path.toString(), $))
-      .map(source -> new WorkspaceChanges());
-  }
+		return For(unitPackage, nodes)
+			.yield(this::createFunction)
+			.flatMap($ -> writeSource.apply(path.toString(), $))
+			.map(source -> new WorkspaceChanges());
+	}
 
-  public CompilationUnit createFunction(
-    PackageDeclaration classPackage,
-    List<Node> nodes
-  ){
-    CompilationUnit source = new CompilationUnit();
-    ExpressionStmt code = (ExpressionStmt) nodes.head();
+	public CompilationUnit createFunction(
+		PackageDeclaration classPackage,
+		List<Node> nodes
+	){
+		CompilationUnit source = new CompilationUnit();
+		ExpressionStmt code = (ExpressionStmt) nodes.head();
 
-    ClassOrInterfaceDeclaration classCode = source
-      .setPackageDeclaration(classPackage)
-      .addClass(functionName(code))
-      .setPublic(true)
-      .addAnnotation(named(code))
-      .addImplementedType(functionType(code));
+		ClassOrInterfaceDeclaration classCode = source
+			.setPackageDeclaration(classPackage)
+			.addClass(functionName(code))
+			.setPublic(true)
+			.addAnnotation(named(code))
+			.addImplementedType(functionType(code));
 
-    addApplyMethod(classCode, code);
+		addApplyMethod(classCode, code);
 
-    log.debug("created: {}", source);
-    return source;
-  }
+		log.debug("created: {}", source);
+		return source;
+	}
 
-  public MethodDeclaration addApplyMethod(
-    ClassOrInterfaceDeclaration classCode,
-    ExpressionStmt originalCode
-  ){
-    MethodDeclaration method = classCode.addMethod("apply");
-    List<NameExpr> functionParameters = undeclaredVariables(originalCode);
-    java.util.Map<String, Type> declarations = declaredVariables(originalCode);
-    for(NameExpr variable: functionParameters){
-      String name = variable.getNameAsString();
-      Type type = declarations.get(name);
-      if (type != null){
-        method.addParameter(type, name);
-      }
-    }
-    VariableDeclarationExpr declaration = 
-      (VariableDeclarationExpr)originalCode.getChildNodes().get(0);
-    Expression init = declaration.getVariable(0).getInitializer().get();
-    ReturnStmt returnStmt = new ReturnStmt(init);
-    method.setType(returnType(originalCode));
-    method.setPublic(true);
-    method.createBody().addStatement(returnStmt);
-    return method;
-  }
+	public MethodDeclaration addApplyMethod(
+		ClassOrInterfaceDeclaration classCode,
+		ExpressionStmt originalCode
+	){
+		MethodDeclaration method = classCode.addMethod("apply");
+		List<NameExpr> functionParameters = undeclaredVariables(originalCode);
+		java.util.Map<String, Type> declarations = declaredVariables(originalCode);
+		for(NameExpr variable: functionParameters){
+			String name = variable.getNameAsString();
+			Type type = declarations.get(name);
+			if (type != null){
+				method.addParameter(type, name);
+			}
+		}
+		VariableDeclarationExpr declaration = 
+			(VariableDeclarationExpr)originalCode.getChildNodes().get(0);
+		Expression init = declaration.getVariable(0).getInitializer().get();
+		ReturnStmt returnStmt = new ReturnStmt(init);
+		method.setType(returnType(originalCode));
+		method.setPublic(true);
+		method.createBody().addStatement(returnStmt);
+		return method;
+	}
 
-  public AnnotationExpr named(ExpressionStmt code){
-    return new SingleMemberAnnotationExpr()
-      .setMemberValue(new StringLiteralExpr(functionName(code)))
-      .setName("Named");
-  }
+	public AnnotationExpr named(ExpressionStmt code){
+		return new SingleMemberAnnotationExpr()
+			.setMemberValue(new StringLiteralExpr(functionName(code)))
+			.setName("Named");
+	}
 
-  public ClassOrInterfaceType functionType(ExpressionStmt code){
-    Type returnType = returnType(code);
-    List<NameExpr> functionParameters = undeclaredVariables(code);
-    log.debug("undeclaredVariables: {}", functionParameters);
-    java.util.Map<String, Type> declarations = declaredVariables(code);
+	public ClassOrInterfaceType functionType(ExpressionStmt code){
+		Type returnType = returnType(code);
+		List<NameExpr> functionParameters = undeclaredVariables(code);
+		log.debug("undeclaredVariables: {}", functionParameters);
+		java.util.Map<String, Type> declarations = declaredVariables(code);
 
-    ClassOrInterfaceType functionType = new ClassOrInterfaceType("Function");
-    NodeList types = new NodeList();
-    for(NameExpr variable: functionParameters){
-      String name = variable.getNameAsString();
-      Type type = declarations.get(name);
-      if (type != null){
-        types.add(type);
-      }
-    }
-    log.debug("return type: {}", returnType);
-    log.debug("types: {}", types);
-    types.add(returnType);
-    functionType.setTypeArguments(types);
-    return functionType;
-  }
+		ClassOrInterfaceType functionType = new ClassOrInterfaceType("Function");
+		NodeList types = new NodeList();
+		for(NameExpr variable: functionParameters){
+			String name = variable.getNameAsString();
+			Type type = declarations.get(name);
+			if (type != null){
+				types.add(type);
+			}
+		}
+		log.debug("return type: {}", returnType);
+		log.debug("types: {}", types);
+		types.add(returnType);
+		functionType.setTypeArguments(types);
+		return functionType;
+	}
 
-  public Type returnType(ExpressionStmt code){
-    return code.getExpression()
-      .asVariableDeclarationExpr()
-      .getVariables()
-      .getFirst().get()
-      .getType();
-  }
+	public Type returnType(ExpressionStmt code){
+		return code.getExpression()
+			.asVariableDeclarationExpr()
+			.getVariables()
+			.getFirst().get()
+			.getType();
+	}
 
-  public List<NameExpr> undeclaredVariables(ExpressionStmt code){
-      List<NameExpr> usedNames = List.ofAll(code.findAll(NameExpr.class));
-      return usedNames.filter(name -> checkVariableForDeclaration(name, code) );
-  }
+	public List<NameExpr> undeclaredVariables(ExpressionStmt code){
+			List<NameExpr> usedNames = List.ofAll(code.findAll(NameExpr.class));
+			return usedNames.filter(name -> checkVariableForDeclaration(name, code) );
+	}
 
-  public java.util.Map<String, Type> declaredVariables(ExpressionStmt code){
-      Optional<Node> methodCode = Optional.of(code);
-      java.util.Map<String, Type> variables = new HashMap<>();
+	public java.util.Map<String, Type> declaredVariables(ExpressionStmt code){
+			Optional<Node> methodCode = Optional.of(code);
+			java.util.Map<String, Type> variables = new HashMap<>();
 
-      while(
-        methodCode.isPresent()
-          && !methodCode.get().getClass().equals(MethodDeclaration.class)
-      ){
-        methodCode = methodCode.flatMap( $ -> $.getParentNode() );
-      }
+			while(
+				methodCode.isPresent()
+					&& !methodCode.get().getClass().equals(MethodDeclaration.class)
+			){
+				methodCode = methodCode.flatMap( $ -> $.getParentNode() );
+			}
 
-      MethodDeclaration method = (MethodDeclaration)methodCode.get();
-      method.getParameters().forEach( param -> {
-        variables.put(param.getName().asString(), param.getType());
-      });
+			MethodDeclaration method = (MethodDeclaration)methodCode.get();
+			method.getParameters().forEach( param -> {
+				variables.put(param.getName().asString(), param.getType());
+			});
 
-      java.util.List<VariableDeclarationExpr> declarations = 
-        methodCode.get().findAll(VariableDeclarationExpr.class);
-      declarations.forEach( declaration -> {
-        declaration.getVariables().forEach( variable -> {
-          variables.put(variable.getName().asString(), variable.getType());
-        });
-      });
+			java.util.List<VariableDeclarationExpr> declarations = 
+				methodCode.get().findAll(VariableDeclarationExpr.class);
+			declarations.forEach( declaration -> {
+				declaration.getVariables().forEach( variable -> {
+					variables.put(variable.getName().asString(), variable.getType());
+				});
+			});
 
-      ClassOrInterfaceDeclaration classCode = 
-        (ClassOrInterfaceDeclaration)method.getParentNode().get();
-      classCode.getFields().forEach( 
-        field -> field.getVariables().forEach( variable -> {
-          variables.put(variable.getName().asString(), variable.getType());
-        })
-      );
+			ClassOrInterfaceDeclaration classCode = 
+				(ClassOrInterfaceDeclaration)method.getParentNode().get();
+			classCode.getFields().forEach( 
+				field -> field.getVariables().forEach( variable -> {
+					variables.put(variable.getName().asString(), variable.getType());
+				})
+			);
 
-      return variables;
-  }
+			return variables;
+	}
 
-  public boolean checkVariableForDeclaration(NameExpr variable, ExpressionStmt root){
-    boolean declared = false;
-    String name = variable.getName().toString();
-    Optional<Node> parent = variable.getParentNode();
-    while( 
-      !declared
-      && parent.isPresent() 
-      && parent.filter($ -> $.equals(root)).isEmpty() 
-    ){
-      Node node = parent.get();
-      if (node.getClass().equals(LambdaExpr.class)){
-        LambdaExpr expression = (LambdaExpr) node;
-        if (expression.getParameterByName(name).isPresent()){
-          declared = true;
-        };
-      }
-      parent = node.getParentNode();
-    }
-    return !declared;
-  }
+	public boolean checkVariableForDeclaration(NameExpr variable, ExpressionStmt root){
+		boolean declared = false;
+		String name = variable.getName().toString();
+		Optional<Node> parent = variable.getParentNode();
+		while( 
+			!declared
+			&& parent.isPresent() 
+			&& parent.filter($ -> $.equals(root)).isEmpty() 
+		){
+			Node node = parent.get();
+			if (node.getClass().equals(LambdaExpr.class)){
+				LambdaExpr expression = (LambdaExpr) node;
+				if (expression.getParameterByName(name).isPresent()){
+					declared = true;
+				};
+			}
+			parent = node.getParentNode();
+		}
+		return !declared;
+	}
 
-  public String functionName(ExpressionStmt block){
-    List<VariableDeclarator> variables = List.ofAll(block.getExpression()
-      .asVariableDeclarationExpr()
-      .getVariables());
-    String name = variables.head().getName().asString();
-    name = name.substring(0,1).toUpperCase() + name.substring(1);
-    return name;
-  }
+	public String functionName(ExpressionStmt block){
+		List<VariableDeclarator> variables = List.ofAll(block.getExpression()
+			.asVariableDeclarationExpr()
+			.getVariables());
+		String name = variables.head().getName().asString();
+		name = name.substring(0,1).toUpperCase() + name.substring(1);
+		return name;
+	}
 
-  public boolean applicableStatement(Node node){
-    if (node.getClass().equals(ExpressionStmt.class)){
-      return  node.getChildNodes().get(0).getClass().equals(VariableDeclarationExpr.class);
-    } else {
-      return false;
-    }
-  }
+	public boolean applicableStatement(Node node){
+		if (node.getClass().equals(ExpressionStmt.class)){
+			return  node.getChildNodes().get(0).getClass().equals(VariableDeclarationExpr.class);
+		} else {
+			return false;
+		}
+	}
 
-  @Inject @Named("WriteSource")
-  private Function2<String, CompilationUnit, Try<String>>
-    writeSource;
+	@Inject @Named("WriteSource")
+	private Function2<String, CompilationUnit, Try<String>>
+		writeSource;
 
-  @Inject @Named("ParseCompilationUnit")
-  private Function<URI, Try<CompilationUnit>>
-    parseCompilationUnit;
+	@Inject @Named("ParseCompilationUnit")
+	private Function<URI, Try<CompilationUnit>>
+		parseCompilationUnit;
 
-  @Inject @Named("ParsePackage")
-  private Function<CompilationUnit, Try<PackageDeclaration>>
-    parsePackage;
+	@Inject @Named("ParsePackage")
+	private Function<CompilationUnit, Try<PackageDeclaration>>
+		parsePackage;
 
-  @Inject @Named("FindWrappingSelectionNode")
-  private Function3<Range, Function<Node,Boolean>, Node, List<Node>>
-    findSelectedNode;
+	@Inject @Named("FindWrappingSelectionNode")
+	private Function3<Range, Function<Node,Boolean>, Node, List<Node>>
+		findSelectedNode;
 
 }

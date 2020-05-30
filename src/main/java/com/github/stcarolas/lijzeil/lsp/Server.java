@@ -15,13 +15,13 @@ import org.eclipse.lsp4j.services.WorkspaceService;
 @Named
 public class Server implements LanguageServer {
 
-  @Inject
-  private TextDocumentService document;
+	@Inject
+	private TextDocumentService document;
 
-  @Inject
-  private WorkspaceService workspace;
+	@Inject
+	private WorkspaceService workspace;
 
-  @Override
+	@Override
 	public CompletableFuture<InitializeResult> initialize(InitializeParams params) {
 		return CompletableFuture.supplyAsync(this::init);
 	}
@@ -44,10 +44,10 @@ public class Server implements LanguageServer {
 		return workspace;
 	}
 
-  private InitializeResult init(){
-    ServerCapabilities capabilities = new ServerCapabilities();
-    capabilities.setCodeActionProvider(true);
-    return new InitializeResult(capabilities);
-  }
+	private InitializeResult init(){
+		ServerCapabilities capabilities = new ServerCapabilities();
+		capabilities.setCodeActionProvider(true);
+		return new InitializeResult(capabilities);
+	}
 
 }

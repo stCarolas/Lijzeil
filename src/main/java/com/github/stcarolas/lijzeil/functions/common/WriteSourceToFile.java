@@ -17,19 +17,19 @@ import static io.vavr.API.*;
 @Log4j2
 public class WriteSourceToFile implements Function2<File, CompilationUnit, Try<String>>{
 
-  public Try<String> apply(File aTargetFile, CompilationUnit aSource){
+	public Try<String> apply(File aTargetFile, CompilationUnit aSource){
 
-    Try<String> source = 
-      Option(aSource).map(CompilationUnit::toString)
-        .toTry(() -> new RuntimeException("Missing source for writing to file"));
+		Try<String> source = 
+			Option(aSource).map(CompilationUnit::toString)
+				.toTry(() -> new RuntimeException("Missing source for writing to file"));
 
-    return Try(() -> new FileWriter(aTargetFile))
-      .flatMap(
-        $ -> source
-          .andThenTry($::write)
-          .andThenTry($::flush)
-      );
+		return Try(() -> new FileWriter(aTargetFile))
+			.flatMap(
+				$ -> source
+					.andThenTry($::write)
+					.andThenTry($::flush)
+			);
 
-  }
+	}
 
 }

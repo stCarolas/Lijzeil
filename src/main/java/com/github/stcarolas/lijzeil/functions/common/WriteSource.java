@@ -20,26 +20,26 @@ import io.vavr.control.Try;
 @Named("WriteSource")
 public class WriteSource implements Function2<String, CompilationUnit, Try<String>> {
 
-  @Inject @Named("WriteSourceToFile")
-  Function2<File, CompilationUnit, Try<String>> writeSource;
+	@Inject @Named("WriteSourceToFile")
+	Function2<File, CompilationUnit, Try<String>> writeSource;
 
-  public Try<String> apply(String uri, CompilationUnit aSource){
-    Try<CompilationUnit> source = Option(aSource)
-      .toTry(() -> new RuntimeException("Missing generated source for writing to file"));
+	public Try<String> apply(String uri, CompilationUnit aSource){
+		Try<CompilationUnit> source = Option(aSource)
+			.toTry(() -> new RuntimeException("Missing generated source for writing to file"));
 
-    Try<String> name = source.map($ -> $.getType(0).getName().toString());
+		Try<String> name = source.map($ -> $.getType(0).getName().toString());
 
-    Try<Path> targetDirectory = Try(() -> URI.create(uri))
-      .map(Paths::get)
-      .map(Path::getParent);
+		Try<Path> targetDirectory = Try(() -> URI.create(uri))
+			.map(Paths::get)
+			.map(Path::getParent);
 
-    Try<File> targetFile = For(targetDirectory, name)
-      .yield( (dir, functionName) ->  dir.resolve(functionName + ".java"))
-      .map(Path::toFile);
+		Try<File> targetFile = For(targetDirectory, name)
+			.yield( (dir, functionName) ->  dir.resolve(functionName + ".java"))
+			.map(Path::toFile);
 
-    return For(targetFile, source)
-      .yield(writeSource)
-      .flatMap($ -> $);
-  }
+		return For(targetFile, source)
+			.yield(writeSource)
+			.flatMap($ -> $);
+	}
 
 }

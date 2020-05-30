@@ -20,22 +20,22 @@ import static io.vavr.API.*;
 @NoArgsConstructor
 @AllArgsConstructor
 public class WorkspaceChanges {
-  private Map<String, List<TextEdit>> changes = Map();
+	private Map<String, List<TextEdit>> changes = Map();
 
-  public Option<WorkspaceEdit> asWorkspaceEdit(){
-    return Option(changes)
-      .map($ -> $.mapValues(item -> item.toJavaList()))
-      .map(Map::toJavaMap)
-      .map(WorkspaceEdit::new);
-  }
+	public Option<WorkspaceEdit> asWorkspaceEdit(){
+		return Option(changes)
+			.map($ -> $.mapValues(item -> item.toJavaList()))
+			.map(Map::toJavaMap)
+			.map(WorkspaceEdit::new);
+	}
 
-  public WorkspaceChanges withChange(String uri, TextEdit change){
-    return new WorkspaceChanges(
-      changes.put(
-        uri, 
-        changes.get(uri).getOrElse(List()).append(change)
-      )
-    );
-  }
+	public WorkspaceChanges withChange(String uri, TextEdit change){
+		return new WorkspaceChanges(
+			changes.put(
+				uri, 
+				changes.get(uri).getOrElse(List()).append(change)
+			)
+		);
+	}
 
 }

@@ -17,19 +17,19 @@ import io.vavr.control.Try;
 
 @Named("FindFieldDeclarations")
 public class FindFieldDeclarations 
-  implements Function2<CompilationUnit, Range, List<FieldDeclaration>> {
+	implements Function2<CompilationUnit, Range, List<FieldDeclaration>> {
 
-  public List<FieldDeclaration> apply(CompilationUnit unit, Range range) {
-    return findSelectedNode.apply(
-        range,
-        node -> node.getClass().equals(FieldDeclaration.class),
-        unit
-      )
-      .map(item -> (FieldDeclaration)item);
-  }
+	public List<FieldDeclaration> apply(CompilationUnit unit, Range range) {
+		return findSelectedNode.apply(
+				range,
+				node -> node.getClass().equals(FieldDeclaration.class),
+				unit
+			)
+			.map(item -> (FieldDeclaration)item);
+	}
 
-  @Inject @Named("FindWrappingSelectionNode")
-  private Function3<Range, Function<Node, Boolean>, Node, List<Node>>
-    findSelectedNode;
+	@Inject @Named("FindWrappingSelectionNode")
+	private Function3<Range, Function<Node, Boolean>, Node, List<Node>>
+		findSelectedNode;
 
 }

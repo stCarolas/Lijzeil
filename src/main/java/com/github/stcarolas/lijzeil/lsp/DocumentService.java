@@ -30,61 +30,62 @@ import lombok.extern.log4j.Log4j2;
 @Log4j2
 public class DocumentService implements TextDocumentService{
 
-  @Inject @Named("CreateFunction")
-  private Function2<URI, com.github.stcarolas.lijzeil.Range, WorkspaceChanges>
-    createFunction;
+	@Override
+	public CompletableFuture<List<Either<Command, CodeAction>>> codeAction(
+		CodeActionParams params
+	){
+		String key = UUID.randomUUID().toString();
+		String path = params.getTextDocument().getUri();
+		Range range = params.getRange();
+		log.info("analyze {} in range {}:{} - {}:{} as command {}", path,
+			range.getStart().getLine(),
+			range.getStart().getCharacter(),
+			range.getEnd().getLine(),
+			range.getEnd().getCharacter(),
+			key
+		);
+		FunctionAsCommand createFunctionCommand = 
+			new FunctionAsCommand(URI.create(path), range, createFunction);
+		cache.addCommand(key, createFunctionCommand);
+		String createApplyMethodKey = UUID.randomUUID().toString();
+		FunctionAsCommand createApplyMethodCommand = 
+			new FunctionAsCommand(URI.create(path), range, createApplyMethod);
+		cache.addCommand(createApplyMethodKey, createApplyMethodCommand);
+		return CompletableFuture
+			.supplyAsync(
+				() -> List.of(
+					Either.forLeft(
+						new Command("Extract statement as Function", key)
+					),
+					Either.forLeft(
+						new Command("Create method with function apply", createApplyMethodKey)
+					)
+				)
+			);
+	}
 
-  @Inject @Named("CreateApplyMethod")
-  private Function2<URI, com.github.stcarolas.lijzeil.Range, WorkspaceChanges>
-    createApplyMethod;
+	@Override
+	public void didOpen(DidOpenTextDocumentParams params) {}
 
-  @Inject
-  private CommandCache cache;
+	@Override
+	public void didChange(DidChangeTextDocumentParams params) {}
 
-  @Override
-  public void didOpen(DidOpenTextDocumentParams params) {}
+	@Override
+	public void didClose(DidCloseTextDocumentParams params) {}
 
-  @Override
-  public void didChange(DidChangeTextDocumentParams params) {}
+	@Override
+	public void didSave(DidSaveTextDocumentParams params) {}
 
-  @Override
-  public void didClose(DidCloseTextDocumentParams params) {}
+	@Inject @Named("CreateFunction")
+	private Function2<URI, com.github.stcarolas.lijzeil.Range, WorkspaceChanges>
+		createFunction;
 
-  @Override
-  public void didSave(DidSaveTextDocumentParams params) {}
+	@Inject @Named("CreateApplyMethod")
+	private Function2<URI, com.github.stcarolas.lijzeil.Range, WorkspaceChanges>
+		createApplyMethod;
 
-  @Override
-  public CompletableFuture<List<Either<Command, CodeAction>>> codeAction(
-    CodeActionParams params
-  ){
-    String key = UUID.randomUUID().toString();
-    String path = params.getTextDocument().getUri();
-    Range range = params.getRange();
-    log.info("analyze {} in range {}:{} - {}:{} as command {}", path,
-      range.getStart().getLine(),
-      range.getStart().getCharacter(),
-      range.getEnd().getLine(),
-      range.getEnd().getCharacter(),
-      key
-    );
-    FunctionAsCommand createFunctionCommand = 
-      new FunctionAsCommand(URI.create(path), range, createFunction);
-    cache.addCommand(key, createFunctionCommand);
-    String createApplyMethodKey = UUID.randomUUID().toString();
-    FunctionAsCommand createApplyMethodCommand = 
-      new FunctionAsCommand(URI.create(path), range, createApplyMethod);
-    cache.addCommand(createApplyMethodKey, createApplyMethodCommand);
-    return CompletableFuture
-      .supplyAsync(
-        () -> List.of(
-          Either.forLeft(
-            new Command("Extract statement as Function", key)
-          ),
-          Either.forLeft(
-            new Command("Create method with function apply", createApplyMethodKey)
-          )
-        )
-      );
-  }
+	@Inject
+	private CommandCache cache;
+
 
 }

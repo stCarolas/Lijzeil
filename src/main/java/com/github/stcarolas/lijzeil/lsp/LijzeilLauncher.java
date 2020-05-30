@@ -19,25 +19,25 @@ import java.io.FileOutputStream;
 @RequiredArgsConstructor
 @Log4j2
 public class LijzeilLauncher {
-  public static void main(String args[]){
+	public static void main(String args[]){
 
 		Try<ApplicationContext> context = Try(() -> ApplicationContext.builder().start());
 
-    Try<Launcher<LanguageClient>> launcher = 
-      context
-        .map($ -> $.getBean(Server.class))
-        .map(server -> LSPLauncher.createServerLauncher(server, System.in, System.out));
+		Try<Launcher<LanguageClient>> launcher = 
+			context
+				.map($ -> $.getBean(Server.class))
+				.map(server -> LSPLauncher.createServerLauncher(server, System.in, System.out));
 
-    Try<LanguageClient> client = launcher.map($ -> $.getRemoteProxy());
-    Try<LSPClient> clientWrapper = context.map($ -> $.getBean(LSPClient.class));
+		Try<LanguageClient> client = launcher.map($ -> $.getRemoteProxy());
+		Try<LSPClient> clientWrapper = context.map($ -> $.getBean(LSPClient.class));
 
-    For(clientWrapper, client)
-      .yield(LSPClient::setClient)
-      .peek(it -> log.info("Server created"));
+		For(clientWrapper, client)
+			.yield(LSPClient::setClient)
+			.peek(it -> log.info("Server created"));
 
-    launcher
-      .map($ -> $.startListening() )
-      .onFailure(error -> log.error("Cant create Server: {}", error.getMessage()));
-  }
+		launcher
+			.map($ -> $.startListening() )
+			.onFailure(error -> log.error("Cant create Server: {}", error.getMessage()));
+	}
 
 }

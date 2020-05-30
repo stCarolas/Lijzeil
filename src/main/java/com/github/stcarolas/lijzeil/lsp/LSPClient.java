@@ -20,14 +20,14 @@ import lombok.extern.log4j.Log4j2;
 @NoArgsConstructor
 @AllArgsConstructor
 public class LSPClient {
-  private LanguageClient client;
+	private LanguageClient client;
 
-  public LSPClient setClient(LanguageClient client){
-    this.client = client;
-    return this;
-  }
+	public LSPClient setClient(LanguageClient client){
+		this.client = client;
+		return this;
+	}
 
-  public CompletableFuture<ApplyWorkspaceEditResponse> sendEdit(WorkspaceEdit edit){
-    return client.applyEdit(new ApplyWorkspaceEditParams(edit));
-  }
+	public CompletableFuture<ApplyWorkspaceEditResponse> sendEdit(WorkspaceEdit edit){
+		return client.applyEdit(new ApplyWorkspaceEditParams(edit));
+	}
 }

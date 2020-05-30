@@ -12,24 +12,24 @@ import static io.vavr.API.*;
 @Data
 @Log4j2
 public class Range {
-  final Position begin;
-  final Position end;
+	final Position begin;
+	final Position end;
 
-  public boolean wrappedBy(Node node){
-    log.debug("begin: {}",node.getBegin());
-    log.debug("end: {}",node.getEnd());
+	public boolean wrappedBy(Node node){
+		log.debug("begin: {}",node.getBegin());
+		log.debug("end: {}",node.getEnd());
 
-    boolean isWithin = node.getBegin()
-      .filter(position -> 
-          position.line <= begin.getLine() 
-      )
-      .isPresent();
+		boolean isWithin = node.getBegin()
+			.filter(position -> 
+					position.line <= begin.getLine() 
+			)
+			.isPresent();
 
-    isWithin = isWithin && node.getEnd()
-      .filter(position -> 
-          position.line >= end.getLine()
-      )
-      .isPresent();
-    return isWithin;
-  }
+		isWithin = isWithin && node.getEnd()
+			.filter(position -> 
+					position.line >= end.getLine()
+			)
+			.isPresent();
+		return isWithin;
+	}
 }

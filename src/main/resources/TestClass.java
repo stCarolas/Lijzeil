@@ -32,9 +32,9 @@ public class TestClass
 	public Try<ExistingAccountingObject> apply(
 			AccountingObject accountingObject
 	){
-    Try<AccountingObject> accounting = Option(accountingObject)
-      .map($ -> $)
-      .toTry(FailForNone("Missing AccountingObject to create"));
+		Try<AccountingObject> accounting = Option(accountingObject)
+			.map($ -> $)
+			.toTry(FailForNone("Missing AccountingObject to create"));
 
 		Option<Try<ReferencedObject>> referencedObject = 
 			createRefencedObject.apply(accountingObject);

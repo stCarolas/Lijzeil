@@ -26,29 +26,29 @@ import static io.vavr.API.*;
 @Log4j2
 public class Workspace implements WorkspaceService {
 
-  @Inject
-  private CommandCache commands;
+	@Inject
+	private CommandCache commands;
 
-  @Inject
-  private LSPClient lspClient;
+	@Inject
+	private LSPClient lspClient;
 
-  @Override
-  public void didChangeConfiguration(DidChangeConfigurationParams params) {
-  }
+	@Override
+	public void didChangeConfiguration(DidChangeConfigurationParams params) {
+	}
 
-  @Override
-  public void didChangeWatchedFiles(DidChangeWatchedFilesParams params) {
-  }
+	@Override
+	public void didChangeWatchedFiles(DidChangeWatchedFilesParams params) {
+	}
 
-  @Override
-  public CompletableFuture<Object> executeCommand(
-    ExecuteCommandParams params
-  ){
-    ;
-    return commands.executeCommand(params.getCommand())
-        .flatMap($ -> Future.fromCompletableFuture(lspClient.sendEdit($)).toTry())
-        .map($ -> (Object)$)
-        .toCompletableFuture();
-  }
+	@Override
+	public CompletableFuture<Object> executeCommand(
+		ExecuteCommandParams params
+	){
+		;
+		return commands.executeCommand(params.getCommand())
+				.flatMap($ -> Future.fromCompletableFuture(lspClient.sendEdit($)).toTry())
+				.map($ -> (Object)$)
+				.toCompletableFuture();
+	}
 
 }

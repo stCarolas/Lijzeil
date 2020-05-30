@@ -18,22 +18,22 @@ import org.eclipse.lsp4j.WorkspaceEdit;
 @Singleton
 @Log4j2
 public class CommandCache {
-  Map<String, FunctionAsCommand> commands = Map();
+	Map<String, FunctionAsCommand> commands = Map();
 
-  public void addCommand(String key, FunctionAsCommand command){
-    log.info("saving command {}", key);
-    commands = commands.put(key, command);
-  }
+	public void addCommand(String key, FunctionAsCommand command){
+		log.info("saving command {}", key);
+		commands = commands.put(key, command);
+	}
 
-  public Try<WorkspaceEdit> executeCommand(String key){
-    return commands.get(key)
-      .toTry(() -> new RuntimeException("Missing command " + key))
-      .map(FunctionAsCommand::execute)
-      .flatMap(
-        $ -> $.asWorkspaceEdit()
-          .toTry(() -> new RuntimeException("Cant convert workspace changes"))
-      )
-      .andThen( change -> log.info("change: {}", change.getChanges()) );
-  }
+	public Try<WorkspaceEdit> executeCommand(String key){
+		return commands.get(key)
+			.toTry(() -> new RuntimeException("Missing command " + key))
+			.map(FunctionAsCommand::execute)
+			.flatMap(
+				$ -> $.asWorkspaceEdit()
+					.toTry(() -> new RuntimeException("Cant convert workspace changes"))
+			)
+			.andThen( change -> log.info("change: {}", change.getChanges()) );
+	}
 
 }

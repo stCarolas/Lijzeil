@@ -19,8 +19,8 @@ public class ParseCompilationUnit implements Function<URI, Try<CompilationUnit>>
 
 	@Override
 	public Try<CompilationUnit> apply(URI uri) {
-    return Try(() -> new FileInputStream(new File(uri)))
-        .map(content -> StaticJavaParser.parse(content));
+	return Try(() -> new FileInputStream(new File(uri)))
+		.map(content -> StaticJavaParser.parse(content));
 	}
 
 }

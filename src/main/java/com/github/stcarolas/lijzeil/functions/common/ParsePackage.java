@@ -15,12 +15,12 @@ import java.util.function.Function;
 @Named("ParsePackage")
 public class ParsePackage implements Function<CompilationUnit, Try<PackageDeclaration>> {
 
-  public Try<PackageDeclaration> apply(CompilationUnit unit){
-    return Option(unit)
-      .toTry(() -> new RuntimeException("Missing CompilationUnit for parsing package"))
-      .flatMap(
-        $ -> Option.ofOptional($.getPackageDeclaration()).toTry()
-      );
-  }
+	public Try<PackageDeclaration> apply(CompilationUnit unit){
+		return Option(unit)
+			.toTry(() -> new RuntimeException("Missing CompilationUnit for parsing package"))
+			.flatMap(
+				$ -> Option.ofOptional($.getPackageDeclaration()).toTry()
+			);
+	}
 
 }
