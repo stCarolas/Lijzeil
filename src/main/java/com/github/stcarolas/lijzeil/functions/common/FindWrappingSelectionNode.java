@@ -32,11 +32,13 @@ public class FindWrappingSelectionNode
 		Function<Node,Boolean> predicate,
 		Node unit
 	){
-		return filterChildNodesWrappingRange(range, unit)
+		List<Node> nodes = filterChildNodesWrappingRange(range, unit)
 			.foldLeft(
 				List(), 
-				(list, node) -> list.appendAll(findTargetParent.apply(predicate, node))
+				(list, node) -> list.appendAll(findTargetParent.apply(predicate, node)).distinct()
 			);
+		log.debug("found parent nodes: {}", nodes.size());
+		return nodes;
 	}
 
 	public List<Node> filterChildNodesWrappingRange(Range range, Node node) {

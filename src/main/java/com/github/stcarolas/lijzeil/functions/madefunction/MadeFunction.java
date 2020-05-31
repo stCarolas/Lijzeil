@@ -15,7 +15,12 @@ import com.github.javaparser.printer.YamlPrinter;
 import com.github.stcarolas.lijzeil.Range;
 import com.github.stcarolas.lijzeil.WorkspaceChanges;
 import com.github.stcarolas.lijzeil.functions.Zeil;
+import org.eclipse.lsp4j.Position;
+import org.eclipse.lsp4j.TextDocumentEdit;
+import org.eclipse.lsp4j.TextEdit;
+import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 import static com.github.stcarolas.lijzeil.functions.common.Selectors.*;
+import io.vavr.Function1;
 import io.vavr.Function2;
 import io.vavr.Function3;
 import io.vavr.collection.List;
@@ -31,41 +36,99 @@ public class MadeFunction implements Zeil {
 	public WorkspaceChanges apply(URI path, Range range) {
 		List<MethodDeclaration> methods = parseCompilationUnit.apply(path)
 			.toList()
-			.flatMap(unit -> findMethods.apply(range, methodSelector, unit))
-			.map(method -> (MethodDeclaration) method)
-			.map(this::addImplements);
-		log.trace("apply method: {}", new YamlPrinter(true).output(methods.head()));
-		return new WorkspaceChanges();
+			.flatMap(unit -> findMethods.apply(range, methodWithBody, unit))
+			.map(method -> (MethodDeclaration) method);
+		log.debug("methods: {}", methods.size());
+		List<TextEdit> classDeclarationChanges = methods.flatMap(this::addImplements);
+		log.debug("class changes: {}", classDeclarationChanges.size());
+		List<TextEdit> methodsRenaming = methods.flatMap(this::renameMethod);
+		log.debug("method changes: {}", methodsRenaming.size());
+		return new WorkspaceChanges(Map(path.toString(), classDeclarationChanges.appendAll(methodsRenaming)));
 	}
 
-	private MethodDeclaration addImplements(MethodDeclaration method) {
+	private Iterable<TextEdit> renameMethod(MethodDeclaration method) {
+		return Option.ofOptional(method.getName().getRange())
+			.map(toEclipseRange)
+			.map(range -> new TextEdit(range, "apply"));
+	}
+
+	private Iterable<TextEdit> addImplements(MethodDeclaration method) {
 		Option<ClassOrInterfaceDeclaration> classDeclaration = findParentNode.apply(
 			classSelector,
 			method
 		)
 			.map(node -> (ClassOrInterfaceDeclaration) node);
 
-		classDeclaration.forEach(
-			$ -> log.trace("classTree: {}", new YamlPrinter(true).output($))
-		);
-		classDeclaration.forEach(
-			$ -> log.trace("classLine: {}", constructClassDeclarationLine($))
-		);
-
 		String implementation = String.format(
 			"%s<%s>",
 			chooseFunction(method),
 			collectTypes(method)
 		);
-		log.debug("target implementation: {}", implementation);
-		return method;
+		Option<org.eclipse.lsp4j.Range> range = classDeclaration.map(
+			this::getClassDeclarationRange
+		);
+		classDeclaration.forEach($ -> $.addImplements(implementation));
+		Option<String> declaration = classDeclaration.map(
+			this::constructClassDeclarationLine
+		);
+		return For(range, declaration).yield(TextEdit::new);
+	}
+
+	private org.eclipse.lsp4j.Range getClassDeclarationRange(
+		ClassOrInterfaceDeclaration classDeclaration
+	) {
+		return new org.eclipse.lsp4j.Range(
+			getBeginPosition(classDeclaration),
+			getEndPosition(classDeclaration)
+		);
+	}
+
+	private Position getBeginPosition(ClassOrInterfaceDeclaration classDeclaration) {
+		return List.ofAll(classDeclaration.getModifiers())
+			.flatMap(
+				modifier -> Option.ofOptional(modifier.getBegin())
+					.map($ -> new Position($.line, $.column))
+			)
+			.appendAll(
+				Option.ofOptional(classDeclaration.getName().getBegin())
+					.map($ -> new Position($.line, $.column))
+			)
+			.headOption()
+			.map($ -> new Position($.getLine() - 1, $.getCharacter() - 1))
+			.getOrElse(new Position(0, 0));
+	}
+
+	private Position getEndPosition(ClassOrInterfaceDeclaration classDeclaration) {
+		return List.ofAll(
+			Option.ofOptional(classDeclaration.getName().getEnd())
+				.map($ -> new Position($.line, $.column))
+		)
+			.appendAll(
+				List.ofAll(classDeclaration.getImplementedTypes())
+					.lastOption()
+					.flatMap(
+						type -> Option.ofOptional(type.getEnd())
+							.map($ -> new Position($.line, $.column))
+					)
+			)
+			.appendAll(
+				List.ofAll(classDeclaration.getExtendedTypes())
+					.lastOption()
+					.flatMap(
+						type -> Option.ofOptional(type.getEnd())
+							.map($ -> new Position($.line, $.column))
+					)
+			)
+			.lastOption()
+			.map($ -> new Position($.getLine() - 1, $.getCharacter()))
+			.getOrElse(new Position(0, 0));
 	}
 
 	private String constructClassDeclarationLine(
 		ClassOrInterfaceDeclaration classDeclaration
 	) {
 		return List.ofAll(classDeclaration.getModifiers())
-			.map($ -> $.toString())
+			.map(Node::toString)
 			.append(classDeclaration.isInterface() ? "interface" : "class")
 			.append(classDeclaration.getNameAsString())
 			.appendAll(extendsTypes(classDeclaration))
@@ -86,7 +149,7 @@ public class MadeFunction implements Zeil {
 
 	public Option<String> extendsTypes(ClassOrInterfaceDeclaration classCode) {
 		List<ClassOrInterfaceType> types = List.ofAll(classCode.getExtendedTypes());
-		return types.isEmpty() ? None() : Some(types.mkString("extends ",",",""));
+		return types.isEmpty() ? None() : Some(types.mkString("extends ", ",", ""));
 	}
 
 	private String collectTypes(MethodDeclaration method) {
@@ -113,6 +176,10 @@ public class MadeFunction implements Zeil {
 	@Inject
 	@Named("FindWrappingSelectionNode")
 	private Function3<Range, Function<Node, Boolean>, Node, List<Node>> findMethods;
+
+	@Inject
+	@Named("ToEclipseRange")
+	private Function1<com.github.javaparser.Range, org.eclipse.lsp4j.Range> toEclipseRange;
 
 	@Override
 	public String description() {

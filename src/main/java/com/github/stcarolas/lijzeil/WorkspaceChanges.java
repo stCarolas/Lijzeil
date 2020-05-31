@@ -2,6 +2,7 @@ package  com.github.stcarolas.lijzeil;
 
 import static io.vavr.API.Option;
 
+import org.eclipse.lsp4j.ResourceOperation;
 import org.eclipse.lsp4j.TextDocumentEdit;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.WorkspaceEdit;
