@@ -19,7 +19,7 @@ public class Server implements LanguageServer {
 	private TextDocumentService document;
 
 	@Inject
-	private WorkspaceService workspace;
+	private CommandExecutor workspace;
 
 	@Override
 	public CompletableFuture<InitializeResult> initialize(InitializeParams params) {

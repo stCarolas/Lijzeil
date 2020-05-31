@@ -43,6 +43,7 @@ import com.github.javaparser.ast.type.Type;
 import com.github.javaparser.printer.YamlPrinter;
 import com.github.stcarolas.lijzeil.Range;
 import com.github.stcarolas.lijzeil.WorkspaceChanges;
+import com.github.stcarolas.lijzeil.functions.Zeil;
 
 import io.vavr.Function2;
 import io.vavr.Function3;
@@ -56,9 +57,9 @@ import static io.vavr.API.*;
 
 @Log4j2
 @Named("CreateFunction")
-public class CreateFunction implements Function2<URI, Range, Try<WorkspaceChanges>> {
+public class CreateFunction implements Zeil {
 
-	public Try<WorkspaceChanges> apply(URI path, Range range){
+	public WorkspaceChanges apply(URI path, Range range){
 		Try<CompilationUnit> unit = parseCompilationUnit.apply(path);
 		Try<PackageDeclaration> unitPackage = unit.flatMap(parsePackage);
 		Try<List<Node>> nodes = 
@@ -67,7 +68,8 @@ public class CreateFunction implements Function2<URI, Range, Try<WorkspaceChange
 		return For(unitPackage, nodes)
 			.yield(this::createFunction)
 			.flatMap($ -> writeSource.apply(path.toString(), $))
-			.map(source -> new WorkspaceChanges());
+			.map(source -> new WorkspaceChanges())
+			.getOrElse(new WorkspaceChanges());
 	}
 
 	public CompilationUnit createFunction(
@@ -226,6 +228,11 @@ public class CreateFunction implements Function2<URI, Range, Try<WorkspaceChange
 		} else {
 			return false;
 		}
+	}
+
+	@Override
+	public String description() {
+		return "Extract statement as Function";
 	}
 
 	@Inject @Named("WriteSource")

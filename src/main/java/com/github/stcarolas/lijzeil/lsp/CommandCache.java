@@ -20,9 +20,10 @@ import org.eclipse.lsp4j.WorkspaceEdit;
 public class CommandCache {
 	Map<String, FunctionAsCommand> commands = Map();
 
-	public void addCommand(String key, FunctionAsCommand command){
-		log.info("saving command {}", key);
-		commands = commands.put(key, command);
+	public CommandInfo addCommand(FunctionAsCommand command){
+		log.info("saving command {}", command.getKey());
+		commands = commands.put(command.getKey(), command);
+		return command.info();
 	}
 
 	public Try<WorkspaceEdit> executeCommand(String key){

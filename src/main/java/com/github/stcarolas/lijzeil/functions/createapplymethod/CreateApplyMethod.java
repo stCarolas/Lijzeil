@@ -20,9 +20,11 @@ import com.github.javaparser.printer.PrettyPrinterConfiguration;
 import com.github.javaparser.printer.YamlPrinter;
 import com.github.stcarolas.lijzeil.Range;
 import com.github.stcarolas.lijzeil.WorkspaceChanges;
+import com.github.stcarolas.lijzeil.functions.Zeil;
 
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.TextEdit;
+import static com.github.stcarolas.lijzeil.functions.common.Selectors.classSelector;
 
 import io.vavr.API;
 import io.vavr.Function2;
@@ -37,7 +39,7 @@ import static io.vavr.API.*;
 
 @Log4j2
 @Named("CreateApplyMethod")
-public class CreateApplyMethod implements Function2<URI, Range, WorkspaceChanges> {
+public class CreateApplyMethod implements Zeil{
 
 	public WorkspaceChanges apply(URI path, Range range) {
 		return parseCompilationUnit.apply(path).toList()
@@ -60,9 +62,6 @@ public class CreateApplyMethod implements Function2<URI, Range, WorkspaceChanges
 			);
 	}
 
-	private Function<Node, Boolean> classSelector = 
-		node -> node.getClass().equals(ClassOrInterfaceDeclaration.class);
-
 	@Inject @Named("ParseCompilationUnit")
 	private Function<URI, Try<CompilationUnit>>
 		parseCompilationUnit;
@@ -79,4 +78,8 @@ public class CreateApplyMethod implements Function2<URI, Range, WorkspaceChanges
 	private Function2<CompilationUnit, Range, List<FieldDeclaration>>
 		findFieldDeclarations;
 
+	@Override
+	public String description() {
+		return "Create method with function application";
+	}
 }
