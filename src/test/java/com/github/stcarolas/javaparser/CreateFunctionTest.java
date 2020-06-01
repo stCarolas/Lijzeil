@@ -10,20 +10,22 @@ import com.github.stcarolas.lijzeil.Range;
 import com.github.stcarolas.lijzeil.functions.createfunction.CreateFunction;
 
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 public class CreateFunctionTest {
-	YamlPrinter printer = new YamlPrinter(true);
-	String path = "/TestClass.java";
+	//YamlPrinter printer = new YamlPrinter(true);
+	//String path = "/TestClass.java";
 
 	@Test
+	@Disabled
 	public void testNodeSelection(){
-		InputStream content = this.getClass().getResourceAsStream(path);
-		CompilationUnit unit = StaticJavaParser.parse(content);
-		Range range = new Range(new Position(35,5), new Position(37,64));
+		//InputStream content = this.getClass().getResourceAsStream(path);
+		//CompilationUnit unit = StaticJavaParser.parse(content);
+		//Range range = new Range(new Position(35,5), new Position(37,64));
 
-		CreateFunction parser = new CreateFunction();
-		//Try<ExpressionStmt> nodes = new CreateFunction().selectedNodes(unit, range);
+		//CreateFunction parser = new CreateFunction();
+		////Try<ExpressionStmt> nodes = new CreateFunction().selectedNodes(unit, range);
 
 		//Option<PackageDeclaration> unitPackage = Option.ofOptional(unit.getPackageDeclaration());
 		//For(unitPackage, nodes).yield(parser::createFunction).get();
