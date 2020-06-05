@@ -4,6 +4,7 @@ import java.util.concurrent.CompletableFuture;
 
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Singleton;
 
 import org.eclipse.lsp4j.InitializeParams;
 import org.eclipse.lsp4j.InitializeResult;
@@ -12,7 +13,11 @@ import org.eclipse.lsp4j.services.LanguageServer;
 import org.eclipse.lsp4j.services.TextDocumentService;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
+import lombok.extern.log4j.Log4j2;
+
 @Named
+@Singleton
+@Log4j2
 public class Server implements LanguageServer {
 
 	@Inject
@@ -23,16 +28,20 @@ public class Server implements LanguageServer {
 
 	@Override
 	public CompletableFuture<InitializeResult> initialize(InitializeParams params) {
+		log.info("Init server");
 		return CompletableFuture.supplyAsync(this::init);
 	}
 
 	@Override
 	public CompletableFuture<Object> shutdown() {
+		log.info("Shutdown server");
 		return CompletableFuture.supplyAsync(this::init);
 	}
 
 	@Override
-	public void exit() {}
+	public void exit() {
+			log.info("Exit");
+	}
 
 	@Override
 	public TextDocumentService getTextDocumentService() {

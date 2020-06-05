@@ -1,25 +1,30 @@
 package com.github.stcarolas.lijzeil.functions.madefunction;
 
+import static com.github.stcarolas.lijzeil.functions.common.Selectors.classSelector;
+import static com.github.stcarolas.lijzeil.functions.common.Selectors.methodWithBody;
+import static io.vavr.API.For;
+import static io.vavr.API.Map;
+import static io.vavr.API.None;
+import static io.vavr.API.Some;
+
 import java.net.URI;
 import java.util.function.Function;
+
 import javax.inject.Inject;
 import javax.inject.Named;
+
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
-import com.github.javaparser.ast.NodeList;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
-import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
-import com.github.javaparser.printer.YamlPrinter;
 import com.github.stcarolas.lijzeil.Range;
 import com.github.stcarolas.lijzeil.WorkspaceChanges;
 import com.github.stcarolas.lijzeil.functions.Zeil;
+
 import org.eclipse.lsp4j.Position;
-import org.eclipse.lsp4j.TextDocumentEdit;
 import org.eclipse.lsp4j.TextEdit;
-import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
-import static com.github.stcarolas.lijzeil.functions.common.Selectors.*;
+
 import io.vavr.Function1;
 import io.vavr.Function2;
 import io.vavr.Function3;
@@ -27,7 +32,6 @@ import io.vavr.collection.List;
 import io.vavr.control.Option;
 import io.vavr.control.Try;
 import lombok.extern.log4j.Log4j2;
-import static io.vavr.API.*;
 
 @Log4j2
 @Named("MadeFunction")
@@ -39,10 +43,13 @@ public class MadeFunction implements Zeil {
 			.flatMap(unit -> findMethods.apply(range, methodWithBody, unit))
 			.map(method -> (MethodDeclaration) method);
 		log.debug("methods: {}", methods.size());
+
 		List<TextEdit> classDeclarationChanges = methods.flatMap(this::addImplements);
 		log.debug("class changes: {}", classDeclarationChanges.size());
+
 		List<TextEdit> methodsRenaming = methods.flatMap(this::renameMethod);
 		log.debug("method changes: {}", methodsRenaming.size());
+
 		return new WorkspaceChanges(Map(path.toString(), classDeclarationChanges.appendAll(methodsRenaming)));
 	}
 
